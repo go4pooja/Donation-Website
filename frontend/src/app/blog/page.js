@@ -1,45 +1,60 @@
+"use client";
+import { useEffect, useState } from "react";
 import { Calendar, Tag } from "lucide-react";
-
-const posts = [
-  {
-    title: "This Shravan Maas, Let's Serve with Love — Donate Food, Feed Hope",
-    date: "June 30, 2025",
-    category: "Employee Volunteering",
-    excerpt: "As Shravan Maas approaches, we invite you to transform your devotion into action. This sacred month is a time for spiritual reflection, fasting, and rituals, but it's also an opportunity to serve the needy.",
-    href: "#"
-  },
-  {
-    title: "What Is Pitru Paksha? Meaning, Rituals, and Significance of Shradh (2025)",
-    date: "May 31, 2025",
-    category: "Donation & Charity",
-    excerpt: "Have you ever lit a diya in memory of a loved one and felt their quiet presence surrounding you? In Indian culture, remembering our ancestors isn't just a tradition – it's a sacred expression of love, gratitude, and spiritual connection.",
-    href: "#"
-  },
-  {
-    title: "Understanding the Meaning of Pind Daan and Why You Should Donate on Pitru Paksha",
-    date: "May 28, 2025",
-    category: "Donation & Charity",
-    excerpt: "Pitru Paksha is a revered 16-day period in the Hindu calendar, dedicated to honoring our ancestors through rituals, prayers, and offerings. Daan (donation) holds a special place during this time.",
-    href: "#"
-  },
-  {
-    title: "Kids Birthday Party Celebration Idea more Than Cake and Candles",
-    date: "May 28, 2025",
-    category: "Donation & Charity",
-    excerpt: "What if, alongside the party hats and presents, your child could also experience the joy of giving? Discover how to add a deeper layer of meaning to your child's birthday celebration.",
-    href: "#"
-  }
-];
-
-const categories = [
-  "Employee Volunteering",
-  "CSR",
-  "Tax saving",
-  "Donation & Charity",
-  "NGO"
-];
+import apiClient from "@/lib/api";
 
 export default function BlogPage() {
+  const [posts, setPosts] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [postsData, categoriesData] = await Promise.all([
+          apiClient.getBlogPosts(),
+          apiClient.getBlogCategories(),
+        ]);
+
+        setPosts(postsData);
+        setCategories(categoriesData);
+      } catch (err) {
+        console.error('Error fetching blog data:', err);
+        setError('Failed to load blog data. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
@@ -74,7 +89,7 @@ export default function BlogPage() {
         <main className="flex-1">
           <div className="grid md:grid-cols-2 gap-8">
             {posts.map((post, idx) => (
-              <a key={idx} href={post.href} className="block bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-6">
+              <a key={idx} href="#" className="block bg-white rounded-lg shadow hover:shadow-lg transition-shadow p-6">
                 <div className="flex items-center text-sm text-gray-500 mb-2">
                   <Calendar className="w-4 h-4 mr-1" />
                   <span>{post.date}</span>

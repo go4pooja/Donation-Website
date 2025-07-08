@@ -3,77 +3,81 @@
 import { useEffect, useState } from "react";
 import { Heart, Users, School, Hospital, ArrowRight, Star } from "lucide-react";
 import Link from "next/link";
+import apiClient from "@/lib/api";
 
 export default function Home() {
   const [total, setTotal] = useState(0);
+  const [stats, setStats] = useState([]);
+  const [initiatives, setInitiatives] = useState([]);
+  const [campaigns, setCampaigns] = useState([]);
+  const [testimonials, setTestimonials] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
   const deadline = new Date("2025-12-31T23:59:59");
 
-  // TODO: fetch total from API
   useEffect(() => {
-    // Simulate API call
-    setTotal(373728);
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [statsData, initiativesData, campaignsData, testimonialsData] = await Promise.all([
+          apiClient.getHomepageStats(),
+          apiClient.getInitiatives(),
+          apiClient.getCampaigns(),
+          apiClient.getTestimonials(),
+        ]);
+
+        setStats(statsData);
+        setInitiatives(initiativesData);
+        setCampaigns(campaignsData);
+        setTestimonials(testimonialsData);
+        
+        // Calculate total from campaigns
+        const totalRaised = campaignsData.reduce((sum, campaign) => sum + parseFloat(campaign.raised), 0);
+        setTotal(totalRaised);
+      } catch (err) {
+        console.error('Error fetching homepage data:', err);
+        setError('Failed to load data. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
 
   const daysLeft = Math.ceil((deadline - new Date()) / (1000 * 60 * 60 * 24));
 
-  const stats = [
-    { icon: Users, value: "13.0M+", label: "Meals Served" },
-    { icon: Users, value: "15.0M+", label: "Beneficiaries Served" },
-    { icon: School, value: "1052+", label: "Municipal Schools" },
-    { icon: Hospital, value: "507+", label: "Govt Hospitals" },
-  ];
+  // Icon mapping
+  const iconMap = {
+    Users,
+    School,
+    Hospital,
+  };
 
-  const initiatives = [
-    {
-      title: "Swasthya Ahara",
-      description: "Govt. Hospital feeding program in Mumbai to ease food cost and enable better care for patient.",
-      link: "#"
-    },
-    {
-      title: "Bal Shiksha Ahara",
-      description: "Municipal School feeding program to support zero-classroom hunger for better attendance & learning outcome.",
-      link: "#"
-    },
-    {
-      title: "Paushtik Ahara",
-      description: "Meals on wheels to nourish the underprivileged and enable informal education.",
-      link: "#"
-    }
-  ];
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
-  const campaigns = [
-    {
-      title: "Donate on Rath Yatra",
-      subtitle: "Share the Gift of Nourishment",
-      beneficiaries: "14,949",
-      daysLeft: 12,
-      raised: 373728,
-      goal: 1400000,
-      image: "/api/placeholder/300/200"
-    },
-    {
-      title: "Tata Cancer Care Centre",
-      subtitle: "Help Families Endure Their Toughest Battle",
-      beneficiaries: "25,267",
-      daysLeft: 3,
-      raised: 631682,
-      goal: 2000000,
-      image: "/api/placeholder/300/200"
-    }
-  ];
-
-  const testimonials = [
-    {
-      name: "Parent of Kidney Stone Patient",
-      story: "My son is admitted here for kidney stone treatment costing around ₹15,000, which I can't afford. I borrowed money for treatment, but daily travel from Mankhurd to the hospital is expensive. I can't travel by train, so I take a bus or autorickshaw, which adds to the cost. I can't afford restaurant food or go home for lunch, so I skip meals, making me weak.",
-      rating: 5
-    },
-    {
-      name: "Father of Yash",
-      story: "When my wife was admitted to the hospital for the delivery of our second child, I didn't know what to feed our 9-year-old son, Yash. I can't cook and can't afford restaurant food, so we depended on street food like vada pav. I was happy about our second child but worried about Yash's health due to the unhealthy diet. When I heard about Akshaya Chaitanya's free lunch service, I was relieved to feed him a good, nutritious lunch.",
-      rating: 5
-    }
-  ];
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-16">
@@ -106,15 +110,18 @@ export default function Home() {
             </p>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="flex justify-center mb-4">
-                  <stat.icon className="w-12 h-12 text-blue-600" />
+            {stats.map((stat, index) => {
+              const IconComponent = iconMap[stat.icon] || Users;
+              return (
+                <div key={index} className="text-center">
+                  <div className="flex justify-center mb-4">
+                    <IconComponent className="w-12 h-12 text-blue-600" />
+                  </div>
+                  <div className="text-3xl font-bold text-blue-600 mb-2">{stat.value}</div>
+                  <div className="text-gray-600">{stat.label}</div>
                 </div>
-                <div className="text-3xl font-bold text-blue-600 mb-2">{stat.value}</div>
-                <div className="text-gray-600">{stat.label}</div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
@@ -163,11 +170,11 @@ export default function Home() {
                   <p className="text-gray-600 mb-4">{campaign.subtitle}</p>
                   <div className="flex justify-between text-sm text-gray-500 mb-4">
                     <span>{campaign.beneficiaries} Beneficiaries</span>
-                    <span>{campaign.daysLeft} Days left</span>
+                    <span>{campaign.days_left} Days left</span>
                   </div>
                   <div className="mb-4">
                     <div className="flex justify-between text-sm mb-1">
-                      <span>₹{campaign.raised.toLocaleString()}</span>
+                      <span>₹{parseFloat(campaign.raised).toLocaleString()}</span>
                       <span>₹{(campaign.goal / 100000).toFixed(1)}L goal</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">

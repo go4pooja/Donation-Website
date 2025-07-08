@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { MapPin, Phone, Mail, Clock, Send } from "lucide-react";
+import apiClient from "@/lib/api";
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -25,18 +26,24 @@ export default function ContactPage() {
     e.preventDefault();
     setIsSubmitting(true);
     
-    // TODO: Implement form submission
-    setTimeout(() => {
-      setIsSubmitting(false);
-      alert("Thank you for your message! We'll get back to you soon.");
-      setFormData({
-        name: "",
-        email: "",
-        phone: "",
-        subject: "",
-        message: "",
+    apiClient.submitContactForm(formData)
+      .then(() => {
+        alert("Thank you for your message! We'll get back to you soon.");
+        setFormData({
+          name: "",
+          email: "",
+          phone: "",
+          subject: "",
+          message: "",
+        });
+      })
+      .catch((error) => {
+        console.error('Error submitting contact form:', error);
+        alert("There was an error submitting your message. Please try again.");
+      })
+      .finally(() => {
+        setIsSubmitting(false);
       });
-    }, 2000);
   };
 
   const contactInfo = [

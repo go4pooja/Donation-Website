@@ -1,54 +1,69 @@
+"use client";
+import { useEffect, useState } from "react";
 import { Users, School, Hospital, Heart, MapPin, Phone, Mail } from "lucide-react";
+import apiClient from "@/lib/api";
 
 export default function AboutPage() {
-  const stats = [
-    { icon: Users, value: "13.0M+", label: "Meals Served" },
-    { icon: Users, value: "15.0M+", label: "Beneficiaries Served" },
-    { icon: School, value: "1052+", label: "Municipal Schools" },
-    { icon: Hospital, value: "507+", label: "Govt Hospitals" },
-  ];
+  const [stats, setStats] = useState([]);
+  const [initiatives, setInitiatives] = useState([]);
+  const [team, setTeam] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const initiatives = [
-    {
-      title: "Swasthya Ahara",
-      description: "Our government hospital feeding program in Mumbai aims to ease food costs and enable better care for patients. We understand that when families are dealing with medical expenses, providing nutritious meals becomes a challenge. Our program ensures that patients and their families receive hot, nutritious meals during their hospital stay.",
-      impact: "Serving 32+ government hospitals across Mumbai",
-      image: "/api/placeholder/400/300"
-    },
-    {
-      title: "Bal Shiksha Ahara",
-      description: "Our municipal school feeding program supports zero-classroom hunger for better attendance and learning outcomes. We believe that no child should study on an empty stomach. By providing nutritious mid-day meals, we help improve school attendance and concentration levels.",
-      impact: "Supporting 1052+ municipal schools",
-      image: "/api/placeholder/400/300"
-    },
-    {
-      title: "Paushtik Ahara",
-      description: "Our meals on wheels program nourishes the underprivileged and enables informal education. We reach out to communities that may not have access to regular meals, providing both nutrition and a platform for community engagement and education.",
-      impact: "Reaching underserved communities across Mumbai",
-      image: "/api/placeholder/400/300"
-    }
-  ];
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [statsData, initiativesData, teamData] = await Promise.all([
+          apiClient.getAboutStats(),
+          apiClient.getAboutInitiatives(),
+          apiClient.getTeamMembers(),
+        ]);
 
-  const team = [
-    {
-      name: "Dr. Rajesh Kumar",
-      position: "Founder & CEO",
-      description: "Leading our mission to eradicate hunger and empower communities through sustainable food programs.",
-      image: "/api/placeholder/200/200"
-    },
-    {
-      name: "Priya Sharma",
-      position: "Operations Director",
-      description: "Overseeing our kitchen operations and ensuring the highest standards of food safety and quality.",
-      image: "/api/placeholder/200/200"
-    },
-    {
-      name: "Amit Patel",
-      position: "Program Manager",
-      description: "Managing our feeding initiatives and coordinating with government departments and schools.",
-      image: "/api/placeholder/200/200"
-    }
-  ];
+        setStats(statsData);
+        setInitiatives(initiativesData);
+        setTeam(teamData);
+      } catch (err) {
+        console.error('Error fetching about page data:', err);
+        setError('Failed to load data. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // Icon mapping
+  const iconMap = {
+    Users,
+    School,
+    Hospital,
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -89,13 +104,16 @@ export default function AboutPage() {
               <h3 className="text-2xl font-semibold mb-6">Our Impact</h3>
               <div className="grid grid-cols-2 gap-6">
                 {stats.map((stat, index) => (
+                  const IconComponent = iconMap[stat.icon] || Users;
+                  return (
                   <div key={index} className="text-center">
                     <div className="flex justify-center mb-3">
-                      <stat.icon className="w-10 h-10 text-blue-600" />
+                      <IconComponent className="w-10 h-10 text-blue-600" />
                     </div>
                     <div className="text-2xl font-bold text-blue-600 mb-1">{stat.value}</div>
                     <div className="text-sm text-gray-600">{stat.label}</div>
                   </div>
+                  );
                 ))}
               </div>
             </div>
@@ -166,12 +184,18 @@ export default function AboutPage() {
                 <div className={index % 2 === 1 ? 'md:col-start-2' : ''}>
                   <h3 className="text-2xl font-semibold mb-4">{initiative.title}</h3>
                   <p className="text-gray-600 mb-4">{initiative.description}</p>
+                  {initiative.impact && (
                   <div className="bg-blue-50 p-4 rounded-lg">
                     <p className="text-blue-800 font-medium">{initiative.impact}</p>
                   </div>
+                  )}
                 </div>
                 <div className={`bg-gray-200 h-64 rounded-lg flex items-center justify-center ${index % 2 === 1 ? 'md:col-start-1' : ''}`}>
+                  {initiative.image ? (
+                    <img src={initiative.image} alt={initiative.title} className="w-full h-full object-cover rounded-lg" />
+                  ) : (
                   <span className="text-gray-500">Initiative Image</span>
+                  )}
                 </div>
               </div>
             ))}
@@ -192,9 +216,13 @@ export default function AboutPage() {
           <div className="grid md:grid-cols-3 gap-8">
             {team.map((member, index) => (
               <div key={index} className="text-center">
+                {member.image ? (
+                  <img src={member.image} alt={member.name} className="w-32 h-32 rounded-full mx-auto mb-4 object-cover" />
+                ) : (
                 <div className="bg-gray-200 w-32 h-32 rounded-full mx-auto mb-4 flex items-center justify-center">
                   <span className="text-gray-500">Photo</span>
                 </div>
+                )}
                 <h3 className="text-xl font-semibold mb-2">{member.name}</h3>
                 <p className="text-blue-600 font-medium mb-3">{member.position}</p>
                 <p className="text-gray-600">{member.description}</p>
