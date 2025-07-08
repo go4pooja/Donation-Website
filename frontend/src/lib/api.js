@@ -1,87 +1,55 @@
-// API configuration and helper functions
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+// Updated API client to use Supabase instead of Django backend
+import { supabaseService } from './supabase'
 
 class ApiClient {
-  constructor() {
-    this.baseURL = API_BASE_URL;
-  }
-
-  async request(endpoint, options = {}) {
-    const url = `${this.baseURL}${endpoint}`;
-    
-    const config = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-      ...options,
-    };
-
-    try {
-      const response = await fetch(url, config);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      return await response.json();
-    } catch (error) {
-      console.error(`API request failed for ${endpoint}:`, error);
-      throw error;
-    }
-  }
-
   // Homepage API calls
   async getHomepageStats() {
-    return this.request('/homepage/stats/');
+    return supabaseService.getHomepageStats()
   }
 
   async getInitiatives() {
-    return this.request('/homepage/initiatives/');
+    return supabaseService.getInitiatives()
   }
 
   async getCampaigns() {
-    return this.request('/homepage/campaigns/');
+    return supabaseService.getCampaigns()
   }
 
   async getTestimonials() {
-    return this.request('/homepage/testimonials/');
+    return supabaseService.getTestimonials()
   }
 
   // About page API calls
   async getAboutStats() {
-    return this.request('/about/stats/');
+    return supabaseService.getAboutStats()
   }
 
   async getAboutInitiatives() {
-    return this.request('/about/initiatives/');
+    return supabaseService.getAboutInitiatives()
   }
 
   async getTeamMembers() {
-    return this.request('/about/team/');
+    return supabaseService.getTeamMembers()
   }
 
   // Blog API calls
   async getBlogPosts() {
-    return this.request('/blog/posts/');
+    return supabaseService.getBlogPosts()
   }
 
   async getBlogCategories() {
-    return this.request('/blog/categories/');
+    return supabaseService.getBlogCategories()
   }
 
   // Contact API calls
   async submitContactForm(formData) {
-    return this.request('/contact/submit/', {
-      method: 'POST',
-      body: JSON.stringify(formData),
-    });
+    return supabaseService.submitContactForm(formData)
   }
 }
 
 // Create and export a singleton instance
-const apiClient = new ApiClient();
-export default apiClient;
+const apiClient = new ApiClient()
+export default apiClient
 
 // Export individual functions for convenience
 export const {
@@ -95,4 +63,4 @@ export const {
   getBlogPosts,
   getBlogCategories,
   submitContactForm,
-} = apiClient;
+} = apiClient
